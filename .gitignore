@@ -1,0 +1,31 @@
+# Environment
+.env
+.venv/
+venv/
+
+# dbt
+dbt_project/target/
+dbt_project/dbt_packages/
+dbt_project/logs/
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Agent outputs
+agent/runs/
+agent/schema_diff_output.json
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Credentials (NEVER commit)
+**/profiles.yml
+**/*.pem
+**/*.key

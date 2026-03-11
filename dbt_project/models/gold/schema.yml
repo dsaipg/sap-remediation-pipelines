@@ -1,0 +1,34 @@
+version: 2
+
+models:
+  - name: financial_transactions
+    description: >
+      Consolidated financial transaction fact table.
+      Joins document headers, line items, GL accounts, and cost centers.
+      Each row represents one accounting line item with full context.
+      PRIMARY table consumed by the finance dashboard.
+    columns:
+      - name: document_number
+        tests: [not_null]
+      - name: line_item_number
+        tests: [not_null]
+      - name: posting_date
+        tests: [not_null]
+      - name: gl_account_number
+        tests: [not_null]
+      - name: signed_amount_local
+        tests: [not_null]
+
+  - name: financial_master_data
+    description: >
+      Unified financial master data dimension table.
+      Combines GL accounts, cost centers, and vendors into a single reference.
+      Used for lookups, filters, and drill-downs in reports.
+    columns:
+      - name: master_data_type
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['GL_ACCOUNT', 'COST_CENTER', 'VENDOR']
+      - name: entity_id
+        tests: [not_null]

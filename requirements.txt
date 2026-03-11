@@ -1,0 +1,26 @@
+# SAP Remediation POC — Python Dependencies
+
+# Snowflake
+snowflake-connector-python>=3.6.0
+snowflake-sqlalchemy>=1.5.0
+
+# dbt
+dbt-core>=1.7.0
+dbt-snowflake>=1.7.0
+
+# AI Agent
+anthropic>=0.40.0
+
+# Streamlit Dashboard
+streamlit>=1.30.0
+plotly>=5.18.0
+pandas>=2.1.0
+
+# Utilities
+python-dotenv>=1.0.0
+
+# Phase 2 (Git)
+# PyGithub>=2.1.0
+
+# Phase 4 (Jira)
+# jira>=3.5.0

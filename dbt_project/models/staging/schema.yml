@@ -1,0 +1,40 @@
+version: 2
+
+models:
+  - name: stg_bkpf
+    description: "Cleaned accounting document headers"
+    columns:
+      - name: document_number
+        tests: [not_null]
+      - name: company_code
+        tests: [not_null]
+      - name: posting_date
+        tests: [not_null]
+
+  - name: stg_bseg
+    description: "Cleaned accounting document line items with signed amounts"
+    columns:
+      - name: document_number
+        tests: [not_null]
+      - name: line_item_number
+        tests: [not_null]
+      - name: gl_account_number
+        tests: [not_null]
+
+  - name: stg_ska1
+    description: "Cleaned GL account master data"
+    columns:
+      - name: gl_account_number
+        tests: [not_null, unique]
+
+  - name: stg_csks
+    description: "Cleaned cost center master data"
+    columns:
+      - name: cost_center
+        tests: [not_null]
+
+  - name: stg_lfa1
+    description: "Cleaned vendor master data"
+    columns:
+      - name: vendor_number
+        tests: [not_null, unique]

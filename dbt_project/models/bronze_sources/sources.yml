@@ -1,0 +1,48 @@
+version: 2
+
+sources:
+  - name: bronze
+    database: SAP_REMEDIATION
+    schema: BRONZE
+    description: "Raw SAP ECC finance tables ingested without transformation"
+    tables:
+      - name: BKPF
+        description: "Accounting Document Headers"
+        columns:
+          - name: BELNR
+            description: "Document Number (PK with BUKRS + GJAHR)"
+            tests: [not_null]
+          - name: BUKRS
+            tests: [not_null]
+          - name: GJAHR
+            tests: [not_null]
+
+      - name: BSEG
+        description: "Accounting Document Line Items"
+        columns:
+          - name: BELNR
+            tests: [not_null]
+          - name: BUZEI
+            description: "Line Item Number (PK with BELNR + BUKRS + GJAHR)"
+            tests: [not_null]
+
+      - name: SKA1
+        description: "GL Account Master Data"
+        columns:
+          - name: SAKNR
+            description: "GL Account Number"
+            tests: [not_null, unique]
+
+      - name: CSKS
+        description: "Cost Center Master Data"
+        columns:
+          - name: KOSTL
+            description: "Cost Center"
+            tests: [not_null]
+
+      - name: LFA1
+        description: "Vendor Master Data"
+        columns:
+          - name: LIFNR
+            description: "Vendor Number"
+            tests: [not_null, unique]

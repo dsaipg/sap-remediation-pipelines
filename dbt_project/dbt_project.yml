@@ -1,0 +1,35 @@
+name: 'sap_remediation'
+version: '1.0.0'
+config-version: 2
+
+profile: 'sap_remediation'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  sap_remediation:
+    bronze_sources:
+      +schema: bronze
+      +materialized: view
+      +tags: ['bronze']
+    staging:
+      +schema: silver
+      +materialized: table
+      +tags: ['silver']
+    gold:
+      +schema: gold
+      +materialized: table
+      +tags: ['gold']
+
+vars:
+  company_code: '1000'
+  fiscal_year: '2024'
