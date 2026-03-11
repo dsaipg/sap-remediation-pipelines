@@ -1,7 +1,7 @@
 # SAP S/4HANA Data Model Remediation POC
 
 ## The Problem
-SAP is migrating from ECC to S/4HANA, consolidating classic finance tables (BKPF, BSEG, SKA1, CSKS, LFA1) into new structures (ACDOCA Universal Journal, BP Business Partner). Every downstream ETL pipeline must be remediated — a process that currently takes weeks of manual effort.
+SAP is migrating from ECC to S/4HANA, consolidating classic finance tables (BKPF, BSEG, SKA1, CSKS, LFA1) into new structures (ACDOCA Universal Journal, BP Business Partner). Every downstream ETL pipeline must be remediated — a process that currently takes months of manual effort.
 
 ## This POC
 An AI agent that **automatically detects schema changes, generates new ETL code, documents differences, and creates PRs** — reducing remediation from weeks to minutes.
