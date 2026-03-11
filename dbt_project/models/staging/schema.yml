@@ -38,3 +38,52 @@ models:
     columns:
       - name: vendor_number
         tests: [not_null, unique]
+
+  # ── S/4HANA Silver Models ─────────────────────────────────────────────────
+
+  - name: stg_acdoca
+    description: >
+      Universal Journal Entry (S/4HANA). Replaces stg_bkpf + stg_bseg.
+      ACDOCA is already a flat table — no header/line-item join required.
+      Filtered to leading ledger (RLDNR=0L) and client 100.
+    columns:
+      - name: document_number
+        tests: [not_null]
+      - name: company_code
+        tests: [not_null]
+      - name: fiscal_year
+        tests: [not_null]
+      - name: line_item_number
+        tests: [not_null]
+      - name: posting_date
+        tests: [not_null]
+      - name: gl_account_number
+        tests: [not_null]
+      - name: signed_amount_local
+        tests: [not_null]
+
+  - name: stg_bp
+    description: >
+      Business Partner master data (S/4HANA). Replaces stg_lfa1.
+      Unifies vendor and customer records; IS_BLOCKED/IS_DELETED are native BOOLEANs.
+    columns:
+      - name: business_partner_number
+        tests: [not_null, unique]
+      - name: bp_role
+        tests: [not_null]
+
+  - name: stg_ska1_s4
+    description: >
+      GL Account Master Data for S/4HANA (extends stg_ska1).
+      Adds functional_area, gl_account_type, and is_cash_flow_relevant.
+    columns:
+      - name: gl_account_number
+        tests: [not_null, unique]
+
+  - name: stg_csks_s4
+    description: >
+      Cost Center Master Data for S/4HANA (extends stg_csks).
+      Adds functional_area and segment.
+    columns:
+      - name: cost_center
+        tests: [not_null]

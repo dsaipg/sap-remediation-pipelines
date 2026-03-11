@@ -1,97 +1,108 @@
--- Gold Layer: Consolidated Financial Transactions
--- Joins: stg_bkpf (headers) + stg_bseg (line items) + stg_ska1 (GL) + stg_csks (cost centers)
+-- Gold Layer: Consolidated Financial Transactions (S/4HANA)
+-- Source: stg_acdoca (replaces stg_bkpf + stg_bseg join)
+-- Enriched with: stg_ska1_s4 (GL accounts), stg_csks_s4 (cost centers)
 -- This is the PRIMARY table consumed by the Streamlit report
 --
--- Business logic:
---   - Each row = one accounting line item with full context
---   - Enriched with GL account descriptions, cost center names
---   - Signed amounts for easy aggregation
---   - Excludes reversed documents
+-- S/4HANA migration notes:
+--   - ACDOCA is already flat (no header/line-item join needed)
+--   - exchange_rate not present in ACDOCA; set to NULL for backward compatibility
+--   - New fields added: ledger_id, amount_global_currency, business_partner_number,
+--     functional_area, segment, material_number, plant, quantity, unit_of_measure
 
-WITH headers AS (
-    SELECT * FROM {{ ref('stg_bkpf') }}
+WITH transactions AS (
+    SELECT * FROM {{ ref('stg_acdoca') }}
     WHERE is_reversed = FALSE
 ),
 
-line_items AS (
-    SELECT * FROM {{ ref('stg_bseg') }}
-),
-
 gl_accounts AS (
-    SELECT * FROM {{ ref('stg_ska1') }}
+    SELECT * FROM {{ ref('stg_ska1_s4') }}
 ),
 
 cost_centers AS (
-    SELECT * FROM {{ ref('stg_csks') }}
+    SELECT * FROM {{ ref('stg_csks_s4') }}
     WHERE is_active = TRUE
 ),
 
 joined AS (
     SELECT
         -- Transaction identity
-        h.company_code,
-        h.document_number,
-        h.fiscal_year,
-        li.line_item_number,
+        t.company_code,
+        t.document_number,
+        t.fiscal_year,
+        t.line_item_number,
 
         -- Document context
-        h.document_type,
-        h.document_type_desc,
-        h.posting_date,
-        h.document_date,
-        h.fiscal_period,
-        h.fiscal_quarter,
-        h.reference_document,
-        h.header_text,
-        h.created_by_user,
+        t.document_type,
+        t.document_type_desc,
+        t.posting_date,
+        t.document_date,
+        t.fiscal_period,
+        t.fiscal_quarter,
+        t.reference_document,
+        t.header_text,
+        t.created_by_user,
+
+        -- S/4HANA ledger field
+        t.ledger_id,
 
         -- Account details
-        li.account_type_code,
-        li.account_type_desc,
-        li.gl_account_number,
+        t.account_type_code,
+        t.account_type_desc,
+        t.gl_account_number,
         gl.short_description                        AS gl_account_name,
         gl.long_description                         AS gl_account_full_name,
         gl.account_class,
         gl.pl_statement_type,
+        gl.functional_area                          AS gl_functional_area,
 
         -- Cost allocation
-        li.cost_center,
+        t.cost_center,
         cc.description                              AS cost_center_name,
         cc.category_desc                            AS cost_center_category,
         cc.cost_center_group,
-        li.profit_center,
-        li.internal_order,
+        t.profit_center,
+        t.internal_order,
+
+        -- New S/4HANA controlling fields
+        t.functional_area,
+        t.segment,
 
         -- Amounts
-        li.debit_credit_indicator,
-        li.debit_credit_desc,
-        li.amount_local_currency,
-        li.amount_doc_currency,
-        li.signed_amount_local,
-        li.signed_amount_doc,
-        h.currency_code,
-        h.exchange_rate,
+        t.debit_credit_indicator,
+        t.debit_credit_desc,
+        t.amount_local_currency,
+        t.amount_doc_currency,
+        t.amount_global_currency,                   -- new in S/4HANA (OSL)
+        t.signed_amount_local,
+        t.signed_amount_doc,
+        t.currency_code,
+        NULL::FLOAT                                 AS exchange_rate,  -- not in ACDOCA; retained for schema compat
 
-        -- Partners
-        li.vendor_number,
-        li.customer_number,
-        li.line_item_text,
-        li.tax_code,
+        -- Partners (BPNR supersedes LIFNR/KUNNR in S/4HANA)
+        t.business_partner_number,
+        t.vendor_number,
+        t.customer_number,
+        t.line_item_text,
+        t.tax_code,
+
+        -- Material Ledger (new in S/4HANA)
+        t.material_number,
+        t.plant,
+        t.quantity,
+        t.unit_of_measure,
+
+        -- Reference transaction (new in S/4HANA)
+        t.reference_transaction_type,
 
         -- ETL metadata
-        h.bronze_loaded_at                          AS header_loaded_at,
-        li.bronze_loaded_at                         AS line_item_loaded_at,
+        t.bronze_loaded_at,
         CURRENT_TIMESTAMP()                         AS gold_loaded_at
 
-    FROM line_items li
-    INNER JOIN headers h
-        ON  li.company_code = h.company_code
-        AND li.document_number = h.document_number
-        AND li.fiscal_year = h.fiscal_year
+    FROM transactions t
     LEFT JOIN gl_accounts gl
-        ON li.gl_account_number = gl.gl_account_number
+        ON t.gl_account_number = gl.gl_account_number
     LEFT JOIN cost_centers cc
-        ON li.cost_center = cc.cost_center
+        ON t.cost_center = cc.cost_center
 )
 
 SELECT * FROM joined

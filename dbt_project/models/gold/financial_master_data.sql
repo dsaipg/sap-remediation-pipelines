@@ -1,9 +1,12 @@
--- Gold Layer: Consolidated Financial Master Data
--- Joins: stg_ska1 (GL accounts) + stg_csks (cost centers) + stg_lfa1 (vendors)
+-- Gold Layer: Consolidated Financial Master Data (S/4HANA)
+-- Sources: stg_ska1_s4 (GL accounts), stg_csks_s4 (cost centers), stg_bp (business partners)
 -- This is the REFERENCE table consumed by the Streamlit report
 --
--- Purpose: Single source of truth for all finance master data dimensions
--- Used for: lookups, filters, drill-downs in reports
+-- S/4HANA migration notes:
+--   - stg_lfa1 replaced by stg_bp (Business Partner unifies vendors + customers)
+--   - stg_ska1 replaced by stg_ska1_s4 (adds functional_area, gl_account_type)
+--   - stg_csks replaced by stg_csks_s4 (adds functional_area, segment)
+--   - VENDOR rows now keyed on business_partner_number (PARTNER); LEGACY_LIFNR retained as vendor_number
 
 WITH gl_accounts AS (
     SELECT
@@ -24,8 +27,9 @@ WITH gl_accounts AS (
         NULL::DATE                                  AS valid_from,
         NULL::DATE                                  AS valid_to,
         NULL::DATE                                  AS created_date,
+        functional_area,
         silver_loaded_at
-    FROM {{ ref('stg_ska1') }}
+    FROM {{ ref('stg_ska1_s4') }}
 ),
 
 cost_centers AS (
@@ -47,19 +51,21 @@ cost_centers AS (
         valid_from,
         valid_to,
         NULL::DATE                                  AS created_date,
+        functional_area,
         silver_loaded_at
-    FROM {{ ref('stg_csks') }}
+    FROM {{ ref('stg_csks_s4') }}
 ),
 
-vendors AS (
+-- Business Partners replace stg_lfa1 (vendors) and can also represent customers
+business_partners AS (
     SELECT
         'VENDOR'                                    AS master_data_type,
-        vendor_number                               AS entity_id,
-        vendor_name                                 AS entity_name,
-        COALESCE(vendor_name || ' - ' || vendor_name_2, vendor_name) AS entity_full_name,
-        vendor_account_group                        AS classification,
-        NULL                                        AS sub_classification,
-        NULL                                        AS parent_group,
+        business_partner_number                     AS entity_id,
+        partner_name                                AS entity_name,
+        COALESCE(partner_name || ' - ' || partner_name_2, partner_name) AS entity_full_name,
+        bp_role_desc                                AS classification,
+        bp_type_desc                                AS sub_classification,
+        bp_group                                    AS parent_group,
         NULL                                        AS entity_group,
         country_code,
         city,
@@ -70,8 +76,9 @@ vendors AS (
         NULL::DATE                                  AS valid_from,
         NULL::DATE                                  AS valid_to,
         created_date,
+        NULL                                        AS functional_area,
         silver_loaded_at
-    FROM {{ ref('stg_lfa1') }}
+    FROM {{ ref('stg_bp') }}
 ),
 
 unioned AS (
@@ -79,7 +86,7 @@ unioned AS (
     UNION ALL
     SELECT * FROM cost_centers
     UNION ALL
-    SELECT * FROM vendors
+    SELECT * FROM business_partners
 )
 
 SELECT
