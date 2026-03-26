@@ -187,44 +187,96 @@ Open http://localhost:8501
 
 ## Demo Script
 
+**Before every demo — run reset first:**
+```bash
+./reset_poc.sh
+```
+This ensures a clean slate: `main` branch, no old agent runs, ECC Gold tables in Snowflake.
+Run this again between demos or after a failed run.
+
+---
+
 ### Act 1 — The Problem (2 min)
 
-- Open Snowflake, show `BRONZE` schema — *"This is our live ECC pipeline"*
-- Show `NEW_MODEL` schema next to it — *"SAP just gave us the new S/4HANA structure"*
-- Point out ACDOCA replacing BKPF+BSEG, BP replacing LFA1 — *"Everything changed"*
-- Open GitHub, show `main` branch — *"Our dbt pipeline is built on the old tables. It's broken."*
+1. Open Snowflake console → `SAP_REMEDIATION` database
+2. Show `BRONZE` schema — point to BKPF, BSEG, SKA1, CSKS, LFA1
+   > *"This is our live SAP ECC pipeline. Been running for years."*
+3. Show `NEW_MODEL` schema next to it — point to ACDOCA, BP, SKA1_S4, CSKS_S4
+   > *"SAP just delivered the new S/4HANA structure. BKPF and BSEG are gone — merged into ACDOCA. LFA1 is gone — replaced by BP."*
+4. Open GitHub → `main` branch → `dbt_project/models/staging/`
+   > *"All our dbt models reference the old tables. Every single one is now broken."*
+
+---
 
 ### Act 2 — The Agent (3 min)
 
 ```bash
 cd agent
-python agent_main.py test       # connected to both schemas ✅
-python agent_main.py diff       # 24 changes detected, 80 hours of manual work
-python agent_main.py remediate  # Claude generates the fix in seconds
+python agent_main.py test
 ```
+> *"Agent connects to both schemas — ECC and S/4HANA — confirmed."*
 
-- Show `agent/runs/run_<timestamp>/` — schema diff report, generated dbt models, PR doc
+```bash
+python agent_main.py diff
+```
+> *"24 schema changes detected. 10 high impact. Estimated 80 hours of manual work."*
+
+```bash
+python agent_main.py remediate
+```
+> *"Now we let Claude handle it."*
+
+When it finishes, show `agent/runs/run_<timestamp>/`:
+- `schema_diff_report.md` — what changed and why
+- `dbt_remediated/` — the generated model code
+- `PULL_REQUEST.md` — PR-ready documentation
+
+---
 
 ### Act 3 — The Output (2 min)
 
-- Open GitHub — PR is automatically created with full change documentation
-- Show the new Silver models (`stg_acdoca`, `stg_bp`, etc.) in the PR diff
-- *"A human reviews and approves — that's the only manual step"*
+- Open GitHub — PR is automatically created
+  > *"The agent created a branch, committed the new models, and raised a PR — automatically."*
+- Click into the PR diff, show `stg_acdoca.sql`
+  > *"stg_bkpf and stg_bseg are gone. stg_acdoca replaces both. All the field renames are handled."*
+- Point to the PR description
+  > *"Full change documentation — ready for a human to review and approve. That's the only manual step."*
+
+---
 
 ### Act 4 — The Result (2 min)
 
 ```bash
-cd dbt_project && dbt run          # deploys the fixed pipeline to Snowflake
-cd ../streamlit && streamlit run app.py  # dashboard still works
+cd dbt_project && dbt run
 ```
+> *"Deploy the fixed pipeline to Snowflake."*
 
-- Show the Streamlit dashboard — *"The downstream report kept working"*
-- Toggle the Data Lineage tab — show before (ECC) vs after (S/4HANA) pipeline
+Open browser at **http://localhost:8501** (run `cd streamlit && streamlit run app.py` if not already running)
+> *"The finance dashboard — it still works. Zero changes to the report."*
+
+Click the **Data Lineage** tab → toggle from ECC to S/4HANA
+> *"Before and after — you can see exactly what changed in the pipeline."*
+
+---
 
 ### The Pitch Close
 
-> *"80 hours → 5 minutes. This agent can run on every pipeline across the enterprise
+> *"80 hours of manual remediation, done in 5 minutes. And this runs on every pipeline
 > the moment SAP pushes the migration."*
+
+---
+
+### When to run `reset_poc.sh`
+
+- Before every demo — gives you a clean slate
+- After a failed run — wipes partial artifacts
+- When showing the demo a second time to the same audience
+
+```bash
+./reset_poc.sh           # full reset
+./reset_poc.sh --no-sf   # skip Snowflake re-seed (faster)
+./reset_poc.sh --no-dbt  # skip dbt rebuild
+```
 
 ---
 
