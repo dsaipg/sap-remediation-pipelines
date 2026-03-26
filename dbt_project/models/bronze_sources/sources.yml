@@ -46,3 +46,50 @@ sources:
           - name: LIFNR
             description: "Vendor Number"
             tests: [not_null, unique]
+
+  - name: new_model
+    database: SAP_REMEDIATION
+    schema: NEW_MODEL
+    description: "SAP S/4HANA tables — target schema after ECC to S/4HANA migration"
+    tables:
+      - name: ACDOCA
+        description: "Universal Journal Entry — merges BKPF (headers) + BSEG (line items)"
+        columns:
+          - name: DOCNR
+            description: "Document Number (replaces BELNR)"
+            tests: [not_null]
+          - name: RBUKRS
+            description: "Company Code (replaces BUKRS)"
+            tests: [not_null]
+          - name: GJAHR
+            tests: [not_null]
+          - name: DOCLN
+            description: "Line Item Number (replaces BUZEI, extended to 6 chars)"
+            tests: [not_null]
+          - name: RLDNR
+            description: "Ledger ID (new in S/4HANA; 0L=Leading Ledger)"
+            tests: [not_null]
+
+      - name: BP
+        description: "Business Partner — unified vendor + customer master (replaces LFA1 + KNA1)"
+        columns:
+          - name: PARTNER
+            description: "Business Partner Number (replaces LIFNR/KUNNR)"
+            tests: [not_null, unique]
+          - name: BP_ROLE
+            description: "BP Role (FLVN00=Vendor, FLCU00=Customer, FLCU01=Both)"
+            tests: [not_null]
+
+      - name: SKA1_S4
+        description: "GL Account Master Data — S/4HANA extension of SKA1 with functional area and account type"
+        columns:
+          - name: SAKNR
+            description: "GL Account Number"
+            tests: [not_null, unique]
+
+      - name: CSKS_S4
+        description: "Cost Center Master Data — S/4HANA extension of CSKS with functional area and segment"
+        columns:
+          - name: KOSTL
+            description: "Cost Center"
+            tests: [not_null]

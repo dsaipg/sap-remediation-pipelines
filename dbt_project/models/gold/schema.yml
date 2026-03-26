@@ -3,9 +3,10 @@ version: 2
 models:
   - name: financial_transactions
     description: >
-      Consolidated financial transaction fact table.
-      Joins document headers, line items, GL accounts, and cost centers.
-      Each row represents one accounting line item with full context.
+      Consolidated financial transaction fact table (S/4HANA).
+      Sources from stg_acdoca (flat — replaces stg_bkpf + stg_bseg join).
+      Enriched with GL accounts (stg_ska1_s4) and cost centers (stg_csks_s4).
+      Each row represents one journal line item with full context.
       PRIMARY table consumed by the finance dashboard.
     columns:
       - name: document_number
@@ -21,8 +22,9 @@ models:
 
   - name: financial_master_data
     description: >
-      Unified financial master data dimension table.
-      Combines GL accounts, cost centers, and vendors into a single reference.
+      Unified financial master data dimension table (S/4HANA).
+      Combines GL accounts (stg_ska1_s4), cost centers (stg_csks_s4),
+      and business partners (stg_bp) into a single reference.
       Used for lookups, filters, and drill-downs in reports.
     columns:
       - name: master_data_type
