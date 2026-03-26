@@ -185,7 +185,50 @@ Open http://localhost:8501
 
 ---
 
-## Running the Full Demo
+## Demo Script
+
+### Act 1 — The Problem (2 min)
+
+- Open Snowflake, show `BRONZE` schema — *"This is our live ECC pipeline"*
+- Show `NEW_MODEL` schema next to it — *"SAP just gave us the new S/4HANA structure"*
+- Point out ACDOCA replacing BKPF+BSEG, BP replacing LFA1 — *"Everything changed"*
+- Open GitHub, show `main` branch — *"Our dbt pipeline is built on the old tables. It's broken."*
+
+### Act 2 — The Agent (3 min)
+
+```bash
+cd agent
+python agent_main.py test       # connected to both schemas ✅
+python agent_main.py diff       # 24 changes detected, 80 hours of manual work
+python agent_main.py remediate  # Claude generates the fix in seconds
+```
+
+- Show `agent/runs/run_<timestamp>/` — schema diff report, generated dbt models, PR doc
+
+### Act 3 — The Output (2 min)
+
+- Open GitHub — PR is automatically created with full change documentation
+- Show the new Silver models (`stg_acdoca`, `stg_bp`, etc.) in the PR diff
+- *"A human reviews and approves — that's the only manual step"*
+
+### Act 4 — The Result (2 min)
+
+```bash
+cd dbt_project && dbt run          # deploys the fixed pipeline to Snowflake
+cd ../streamlit && streamlit run app.py  # dashboard still works
+```
+
+- Show the Streamlit dashboard — *"The downstream report kept working"*
+- Toggle the Data Lineage tab — show before (ECC) vs after (S/4HANA) pipeline
+
+### The Pitch Close
+
+> *"80 hours → 5 minutes. This agent can run on every pipeline across the enterprise
+> the moment SAP pushes the migration."*
+
+---
+
+## Running the Full Demo (commands only)
 
 ```bash
 # 1. Build ECC pipeline in Snowflake
